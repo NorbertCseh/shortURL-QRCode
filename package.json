@@ -11,7 +11,9 @@
 		"axios": "^0.20.0",
 		"core-js": "^3.6.5",
 		"fs": "^0.0.1-security",
+		"moment": "^2.27.0",
 		"qrcode-svg": "^1.1.0",
+		"validator": "^13.1.1",
 		"vue": "^2.6.11",
 		"vue-class-component": "^7.2.3",
 		"vue-property-decorator": "^8.4.2"
@@ -19,6 +21,7 @@
 	"devDependencies": {
 		"@types/axios": "^0.14.0",
 		"@types/qrcode-svg": "^1.1.0",
+		"@types/validator": "^13.1.0",
 		"@typescript-eslint/eslint-plugin": "^2.33.0",
 		"@typescript-eslint/parser": "^2.33.0",
 		"@vue/cli-plugin-babel": "~4.5.0",

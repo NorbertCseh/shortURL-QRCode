@@ -38,9 +38,9 @@
 						<div class="field">
 							<div v-if="newUrl" class="container mb-2">
 								<span>New link:</span>
-								<a :href="newUrl" target="_blank">
-									{{ newUrl }}
-								</a>
+								<a :href="newUrl" target="_blank">{{
+									newUrl
+								}}</a>
 							</div>
 						</div>
 					</div>
@@ -58,6 +58,7 @@
 						<th>Original Link</th>
 						<th>Shortened Link</th>
 						<th>QR Code</th>
+						<th>Created Date</th>
 					</thead>
 					<tbody>
 						<tr v-for="url in urls" v-bind:key="url[0]">
@@ -71,7 +72,12 @@
 									<span>{{ url[2] }}</span>
 								</a>
 							</td>
-							<td><p v-html="url[3]"></p></td>
+							<td>
+								<p v-html="url[3]"></p>
+							</td>
+							<td>
+								<p v-html="url[4]"></p>
+							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -84,6 +90,9 @@
 	import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 	import axios from 'axios';
 	import QRCode from 'qrcode-svg';
+	import moment from 'moment';
+
+	moment.locale('hu');
 
 	@Component
 	export default class App extends Vue {
@@ -91,7 +100,7 @@
 		oldUrl = '';
 		loading = false;
 		newUrl = '';
-		urls: Array<[number, string, string, string]> = [];
+		urls: Array<[number, string, string, string, string]> = [];
 		errors = '';
 
 		data() {
@@ -105,31 +114,51 @@
 		}
 
 		@Emit()
+		async isUrl(url: string) {
+			const pattern = new RegExp(
+				'^(https?:\\/\\/)?' + // protocol
+				'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+				'((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+				'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+				'(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+					'(\\#[-a-z\\d_]*)?$',
+				'i'
+			); // fragment locator
+			return !!pattern.test(url);
+		}
+
+		@Emit()
 		async sendRequest(inputUrl: string) {
 			this.loading = true;
-			await axios
-				.post('https://rel.ink/api/links/', {
-					url: inputUrl,
-				})
-				.then((res) => {
-					this.newUrl = `https://rel.ink/${res.data.hashid}`;
-					this.urls.push([
-						this.key,
-						this.oldUrl,
-						this.newUrl,
-						new QRCode({
-							content: this.oldUrl,
-							predefined: true,
-						}).svg(),
-					]);
-					this.key = this.key + 1;
+			if (await this.isUrl(inputUrl)) {
+				await axios
+					.post('https://rel.ink/api/links/', {
+						url: inputUrl,
+					})
+					.then((res) => {
+						this.newUrl = `https://rel.ink/${res.data.hashid}`;
+						this.urls.push([
+							this.key,
+							this.oldUrl,
+							this.newUrl,
+							new QRCode({
+								content: this.oldUrl,
+								predefined: true,
+							}).svg(),
+							moment().format('LLLL'),
+						]);
+						this.key = this.key + 1;
 
-					this.loading = false;
-				})
-				.catch(() => {
-					this.errors = 'Not a valid URL address';
-					this.loading = false;
-				});
+						this.loading = false;
+					})
+					.catch(() => {
+						this.errors = 'Something went wrong';
+						this.loading = false;
+					});
+			} else {
+				this.errors = 'Not a valid URL';
+				this.loading = false;
+			}
 		}
 	}
 </script>
